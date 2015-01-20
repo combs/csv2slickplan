@@ -59,6 +59,16 @@ $version = $sitemap->appendChild($version);
 $versioncontents=$doc->createTextNode("1.0");
 $versioncontents=$version->appendChild($versioncontents);
 
+// Link is required but can be garbage
+
+
+$link = $doc->createElement("link");
+$link = $sitemap->appendChild($link);
+
+$linkcontents=$doc->createTextNode("http://slickplan.com/");
+$linkcontents=$link->appendChild($linkcontents);
+
+
 // Set SlickPlan options... hoping to skip this.
 
 $options=$doc->createElement("options");
@@ -74,11 +84,13 @@ $cells=$section->appendChild($cells);
 
 $column_translations["url"]="url";
 $column_translations["title"]="text";
-$column_translations["cms-instance"]="desc";
+// $column_translations["cms-instance"]="desc";
 $column_translations["auto-color"]="color";
 
 
 $order = 100;
+
+$systems=[];
 
 
 // Loop through each row creating a <row> node with the correct data
@@ -86,15 +98,38 @@ $order = 100;
 while (($row = fgetcsv($inputFile)) !== FALSE)
 {
  $container = $doc->createElement('cell');
-
+ 
+ // We only want to save each row if it has a name or a title.
+ $saveit=false;
+ $title="";
+ $cms="";
+ $parentid="";
+ 
  foreach ($headers as $i => $column)
  {
+ 	$column=trim($column);
+
  	// Check our translation table. 
- 	
  	if(array_key_exists(strtolower($column),$column_translations)) {
  		// If available, use the translated one.
  		$column=$column_translations[strtolower($column)];
  	}
+ 	
+ 	// If it's the CMS, save it to description and $cms. 
+ 	
+ 	if (strtolower($column)=="cms-instance") {
+ 		$column="desc";
+ 		$cms=$row[$i];
+ 		
+ 		// Is it in our list of CMSes?
+ 		
+ 		if (!in_array($cms,$systems,true)) {
+  			// No? Let's add it
+ 			array_push($systems,$cms);
+ 		}
+ 		
+ 	}
+ 	
  	
  	 // many incoming URLs are missing the protocol, add it if needed
  	 
@@ -102,23 +137,118 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
      	$row[$i]="http://" . $row[$i];
      }
      
+     if ($column=="url" || $column=="text") {
+     	$saveit=true;
+     }
+     
+     if ($column=="text") {
+     	$title=$row[$i];
+     }
+     
      
 	 $child = $doc->createElement($column);
 	 $child = $container->appendChild($child);
-     $value = $doc->createTextNode($row[$i]);
+     $value = $doc->createTextNode(trim($row[$i]));
      $value = $child->appendChild($value);
      
  }
  
  $order+=100;
  
- $child = $doc->createElement("order");
- $child = $container->appendChild($child);
- $value = $doc->createTextNode($order);
- $value = $child->appendChild($value); 
- $cells->appendChild($container);
+ 
+ if ($saveit) {
+ 	// order attribute increments.
+ 	// TODO: sort alphabetically?
+ 	
+	 $child = $doc->createElement("order");
+	 $child = $container->appendChild($child);
+	 $value = $doc->createTextNode($order);
+	 $value = $child->appendChild($value); 
+	 
+	 // add level attribute. All are level 2. CMSes are level 1. 
+	 // TODO: children.
+	 
+	 $child = $doc->createElement("level");
+	 $child = $container->appendChild($child);
+	 $value = $doc->createTextNode("2");
+	 $value = $child->appendChild($value); 
+	 
+	 // add id attribute.
+		 
+	 if ($title) {
+	 	$id=preg_replace("/[^a-zA-Z]*/","",$title);
+	 } else {
+	 	
+	 	$id=dechex(rand());
+	 }
+	 $child = $doc->createAttribute("id");
+	 $child = $container->appendChild($child);
+	 $value = $doc->createTextNode($id);
+	 $value = $child->appendChild($value); 
+	 
+	 // add parent.
+	 
+	 if ($cms) {
+		 	$parent=preg_replace("/[^a-zA-Z]*/","",$cms);
+		 } else  {
+		 	$parent="";
+		 }
+		 
+	 if ($parent != "") {
+	 	
+		 $child = $doc->createElement("parent");
+		 $child = $container->appendChild($child);
+		 $value = $doc->createTextNode($parent);
+		 $value = $child->appendChild($value); 
+	 }
+	 
+	 $cells->appendChild($container);
+	
+	
+	
+	}
 }
 
+ foreach ($systems as $i => $system) {
+ 
+ 	
+	 $cell = $doc->createElement("cell");
+	 $cell = $cells->appendChild($cell);
+	 
+	 $order+=100;
+ 	 
+ 	 
+	 $child = $doc->createElement("order");
+	 $child = $cell->appendChild($child);
+	 $value = $doc->createTextNode($order);
+	 $value = $child->appendChild($value); 
+ 	      	
+	 $child = $doc->createElement("text");
+	 $child = $cell->appendChild($child);
+	 $value = $doc->createTextNode($system);
+	 $value = $child->appendChild($value); 
+	 
+	 $id=preg_replace("/[^a-zA-Z]*/","",$system);
+	 
+	 $child = $doc->createAttribute("id");
+	 $child = $cell->appendChild($child);
+	 $value = $doc->createTextNode($id);
+	 $value = $child->appendChild($value); 
+	 
+	 
+	 // add level attribute. All are level 2. CMSes are level 1. 
+	
+	 $child = $doc->createElement("level");
+	 $child = $cell->appendChild($child);
+	 $value = $doc->createTextNode("1");
+	 $value = $child->appendChild($value); 
+	 
+ 	
+ }
+ 
+ 
+ 
+ 
 file_put_contents($outputFilename,$doc->saveXML());
 
 
