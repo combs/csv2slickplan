@@ -33,8 +33,15 @@ $doc->formatOutput   = true;
 $sitemap = $doc->createElement('sitemap');
 $sitemap = $doc->appendChild($sitemap);
 
+// Add the main section to the document. 
+// SlickPlan seems to use this to contain all of the objectss
+
 $section = $doc->createElement('section');
 $section = $sitemap->appendChild($section);
+
+$sectionid=$doc->createAttribute('id');
+$sectionid->value="svgmainsection";
+$sectionid=$section->appendChild($sectionid);
 
 // Set sitemap title from input filename
 
@@ -52,24 +59,64 @@ $version = $sitemap->appendChild($version);
 $versioncontents=$doc->createTextNode("1.0");
 $versioncontents=$version->appendChild($versioncontents);
 
+// Set SlickPlan options... hoping to skip this.
 
+$options=$doc->createElement("options");
+$options=$section->appendChild($options);
+
+// Create cells container.
+
+$cells=$doc->createElement("cells");
+$cells=$section->appendChild($cells);
+
+
+// Translation table for the spreadsheet.
+
+$column_translations["url"]="url";
+$column_translations["title"]="text";
+$column_translations["cms-instance"]="desc";
+$column_translations["auto-color"]="color";
+
+
+$order = 100;
 
 
 // Loop through each row creating a <row> node with the correct data
 
 while (($row = fgetcsv($inputFile)) !== FALSE)
 {
- $container = $doc->createElement('row');
+ $container = $doc->createElement('cell');
 
- foreach ($headers as $i => $header)
+ foreach ($headers as $i => $column)
  {
-  $child = $doc->createElement($header);
-  $child = $container->appendChild($child);
+ 	// Check our translation table. 
+ 	
+ 	if(array_key_exists(strtolower($column),$column_translations)) {
+ 		// If available, use the translated one.
+ 		$column=$column_translations[strtolower($column)];
+ 	}
+ 	
+ 	 // many incoming URLs are missing the protocol, add it if needed
+ 	 
+     if ($column=="url" && strpos($row[$i],"http")==false) {
+     	$row[$i]="http://" . $row[$i];
+     }
+     
+     
+	 $child = $doc->createElement($column);
+	 $child = $container->appendChild($child);
      $value = $doc->createTextNode($row[$i]);
      $value = $child->appendChild($value);
+     
  }
-
- $sitemap->appendChild($container);
+ 
+ $order+=100;
+ 
+ $child = $doc->createElement("order");
+ $child = $container->appendChild($child);
+ $value = $doc->createTextNode($order);
+ $value = $child->appendChild($value); 
+ $cells->appendChild($container);
 }
 
 file_put_contents($outputFilename,$doc->saveXML());
