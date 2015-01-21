@@ -7,10 +7,18 @@ ini_set('auto_detect_line_endings', true);
 // h/t http://stackoverflow.com/questions/4852796/php-script-to-convert-csv-files-to-xml
 
 if (!$argv[1] || !$argv[2]) {
-	exit("\nUsage: " . $argv[0] . " input.csv output.xml\n\n");
+	exit("\nUsage: " . $argv[0] . " input.csv output.xml [ia/systems] \n\n");
 }
 $inputFilename    = $argv[1];
 $outputFilename   = $argv[2];
+
+$mode_ia=false;
+$mode_systems=true;
+if (strtolower($argv[3])=="ia") {
+	$mode_ia=true;
+	$mode_systems=false;
+}
+
 
 
 
@@ -100,15 +108,21 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
  $container = $doc->createElement('cell');
  
  // We only want to save each row if it has a name or a title.
+ 
  $saveit=false;
+ 
+ // Convenience variables--we'll gather these as we go.
+ 
  $title="";
  $cms="";
  $parentid="";
  $url="";
+ $iaparent="";
+ 
  
  foreach ($headers as $i => $column)
  {
- 	$column=trim($column);
+ 	$column=strtolower(trim($column));
  	$row[$i]=trim($row[$i]);
  	
 	if ($column=="" || $row[$i]=="") {
@@ -116,14 +130,14 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
 	}
 	
  	// Check our translation table. 
- 	if(array_key_exists(strtolower($column),$column_translations)) {
+ 	if(array_key_exists($column,$column_translations)) {
  		// If available, use the translated one.
- 		$column=$column_translations[strtolower($column)];
+ 		$column=$column_translations[$column];
  	}
  	
  	// If it's the CMS, save it to description and $cms. 
  	
- 	if (strtolower($column)=="cms-instance") {
+ 	if ($column=="cms-instance") {
  		$column="desc";
  		$cms=$row[$i];
  		
@@ -143,11 +157,11 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
      	$row[$i]="http://" . $row[$i];
      	
      }
+     
      if ($column=="url" ){
      	$url=$row[$i];	
      }
-     
-     
+          
      if ($column=="url" || $column=="text") {
      	$saveit=true;
      }
@@ -156,6 +170,12 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
      	$title=$row[$i];
      }
      
+     if ($column=="ia-parent") {
+     	$iaparent=$row[$i];
+     }
+     
+          
+     
      $node_child = addTextNode($doc,$container,$column,$row[$i]);
 
       
@@ -163,8 +183,10 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
  }
  
  $order+=100;
- 
- 
+ if ($cms && strtolower($cms)=="outofscope") {
+ 	$saveit=false;
+ }
+  
  if ($saveit) {
  	// order attribute increments.
  	// TODO: sort alphabetically?
@@ -174,32 +196,84 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
 	 // add level attribute. All are level 2. CMSes are level 1. 
 	 // TODO: children.
 	 
-	 $node_level = addTextNode($doc,$container,"level","2");
+	 	
+	 	$node_level = addTextNode($doc,$container,"level","2");
+	 
 	 
 	 // add id attribute.
 		 
 	 if ($title) {
-	 	$id=preg_replace("/[^a-zA-Z]*/","",$title . $cms);
+
+//	 	$id=preg_replace("/[^a-zA-Z]*/","",$title . $cms);
+// Adding the CMS into the key is helpful for system heirarchy, but not
+// for the IA-centric heirarchy.
+
+	 	$id=preg_replace("/[^a-zA-Z]*/","",$title);
+	 	
 	 } else {
 	 	
 	 	$node_text = addTextNode($doc,$container,"text",$url);
-	 	$id=dechex(rand());
+	 	$id=preg_replace("/[^a-zA-Z]*/","",$url);
 	 }
 
 	 $node_id = addAttribute($doc,$container,"id",$id);
-
-
+ 
+	if ($mode_ia && $cms) {
+     	$results=$container->getElementsByTagName('text');
+		foreach($results as $result) {
+			$result->nodeValue = $result->nodeValue . " (" . $cms . ")";
+		}
+     }
+ 
+	
+	
+	
 	 // add parent.
+	 $parent="";
 	 
-	 if ($cms) {
-		 	$parent=preg_replace("/[^a-zA-Z]*/","",$cms);
-		 } else  {
-		 	$parent="";
-		 }
+	 if ($mode_ia) {
+	 	
+	 	// Information architecture heirarchy
+	 	
+	 	if ($iaparent) {
+	 		
+	 		if (strtolower(trim($iaparent))==strtolower(trim($title))) {
+	 			
+	 			// is it defined as its own parent? then it is top-level
+	 			
+		 		$node_level->nodeValue="1";
+	 		
+	 		} else {
+	 			
+	 			// set its parent 
+	 			
+	 			$parent=preg_replace("/[^a-zA-Z]*/","",$iaparent);
+	 			$node_level->nodeValue="2";
+	 		}
+	 		
+	 		
+	 	} else {
+	 		
+	 		$node_level->nodeValue="1";
+	 		
+	 	}
+	 	
+	 	
+	 } else {
+	 	
+	 	// Systems heirarchy
+		 	
+		 if ($cms) {
+			 	$parent=preg_replace("/[^a-zA-Z]*/","",$cms);
+			 }  
 		 
-	 if ($parent != "") {
-	 	$node_parent = addTextNode($doc,$container,"parent",$parent);
 	 }
+	 
+	 
+	 if ($parent != "") {
+		 	$node_parent = addTextNode($doc,$container,"parent",$parent);
+	 }
+	 
 	 
 	 $cells->appendChild($container);
 	
@@ -208,32 +282,40 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
 	}
 }
 
- foreach ($systems as $i => $system) {
- 
- 	
-	 $cell = $doc->createElement("cell");
-	 $cell = $cells->appendChild($cell);
-	 
-	 $order+=100;
- 	 $node_order = addTextNode($doc,$cell,"order",$order);
-
-	 $node_text = addTextNode($doc,$cell,"text",$system);
-	 
-	 $id=preg_replace("/[^a-zA-Z]*/","",$system);
-	 
-	 $node_id = addAttribute($doc,$cell,"id",$id);
-
-	 
-	 // add level attribute. All are level 2. CMSes are level 1. 
+if ($mode_systems) {
+		
+	// We need first-level heirarchy for the systems view...
 	
-	 $node_level = addTextNode($doc,$cell,"level","1");
- 	
- }
- 
- 
+	 foreach ($systems as $i => $system) {
+	 
+	 	
+		 $cell = $doc->createElement("cell");
+		 $cell = $cells->appendChild($cell);
+		 
+		 $order+=100;
+	 	 $node_order = addTextNode($doc,$cell,"order",$order);
+	
+		 $node_text = addTextNode($doc,$cell,"text",$system);
+		 
+		 $id=preg_replace("/[^a-zA-Z]*/","",$system);
+		 
+		 $node_id = addAttribute($doc,$cell,"id",$id);
+		
+		 
+		 // add level attribute. All are level 2. CMSes are level 1. 
+		
+		 $node_level = addTextNode($doc,$cell,"level","1");
+	 	
+	 }
+	 
+}
+
  
  
 file_put_contents($outputFilename,$doc->saveXML());
+
+
+
 
 
 
