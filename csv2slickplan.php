@@ -293,6 +293,8 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
 
 if ($mode_systems) {
 		
+	sort($systems,SORT_STRING);
+	
 	// We need first-level heirarchy for the systems view...
 	
 	 foreach ($systems as $i => $system) {
