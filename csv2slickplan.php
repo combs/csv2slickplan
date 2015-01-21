@@ -174,12 +174,8 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
      	$iaparent=$row[$i];
      }
      
-          
-     
      $node_child = addTextNode($doc,$container,$column,$row[$i]);
 
-      
-     
  }
  
  $order+=100;
@@ -193,38 +189,51 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
  	
 	 $node_order = addTextNode($doc,$container,"order",$order);
 	 
-	 // add level attribute. All are level 2. CMSes are level 1. 
-	 // TODO: children.
+	 // add level attribute. 
 	 
-	 	
-	 	$node_level = addTextNode($doc,$container,"level","2");
+	 // In systems heiarchy, site are all level 2. CMSes are level 1. 
+	 
+	 // In IA heirarchy, sites contain each other, and are levels 1-2.
+	  
+	 // SlickPlan doesn't seem to particularly care about this attribute,
+	 // but let's play nicely.
+	 
+	 $node_level = addTextNode($doc,$container,"level","2");
+	 
+	 //	There's more logic further down to change this for the IA arch.
 	 
 	 
 	 // add id attribute.
 		 
 	 if ($title) {
 
-//	 	$id=preg_replace("/[^a-zA-Z]*/","",$title . $cms);
-// Adding the CMS into the key is helpful for system heirarchy, but not
-// for the IA-centric heirarchy.
-
-	 	$id=preg_replace("/[^a-zA-Z]*/","",$title);
-	 	
-	 } else {
+		//	 	$id=preg_replace("/[^a-zA-Z]*/","",$title . $cms);
+		// Adding the CMS into the key is helpful for system heirarchy, but not
+		// for the IA-centric heirarchy.
+	
+		// SlickPlan assigns an alpha rando gibberish. Let's just use the 
+		//  title's alpha chars for the ID.
+		
+		$id=preg_replace("/[^a-zA-Z]*/","",$title);
+		 	
+	} else {
 	 	
 	 	$node_text = addTextNode($doc,$container,"text",$url);
 	 	$id=preg_replace("/[^a-zA-Z]*/","",$url);
-	 }
-
-	 $node_id = addAttribute($doc,$container,"id",$id);
+	}
+	
+	$node_id = addAttribute($doc,$container,"id",$id);
  
+ 	
+ 	// Add the CMS as part of the title in the IA heirarchy.
+ 	
 	if ($mode_ia && $cms) {
      	$results=$container->getElementsByTagName('text');
 		foreach($results as $result) {
 			$result->nodeValue = $result->nodeValue . " (" . $cms . ")";
 		}
      }
- 
+
 	
 	
 	
