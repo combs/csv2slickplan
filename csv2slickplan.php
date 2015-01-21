@@ -104,11 +104,17 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
  $title="";
  $cms="";
  $parentid="";
+ $url="";
  
  foreach ($headers as $i => $column)
  {
  	$column=trim($column);
-
+ 	$row[$i]=trim($row[$i]);
+ 	
+	if ($column=="" || $row[$i]=="") {
+		continue;
+	}
+	
  	// Check our translation table. 
  	if(array_key_exists(strtolower($column),$column_translations)) {
  		// If available, use the translated one.
@@ -123,7 +129,7 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
  		
  		// Is it in our list of CMSes?
  		
- 		if (!in_array($cms,$systems,true)) {
+ 		if (strtolower($cms) != "outofscope" &&  !in_array($cms,$systems,true)) {
   			// No? Let's add it
  			array_push($systems,$cms);
  		}
@@ -135,7 +141,12 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
  	 
      if ($column=="url" && strpos($row[$i],"http")==false) {
      	$row[$i]="http://" . $row[$i];
+     	
      }
+     if ($column=="url" ){
+     	$url=$row[$i];	
+     }
+     
      
      if ($column=="url" || $column=="text") {
      	$saveit=true;
@@ -145,11 +156,9 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
      	$title=$row[$i];
      }
      
-     
-	 $child = $doc->createElement($column);
-	 $child = $container->appendChild($child);
-     $value = $doc->createTextNode(trim($row[$i]));
-     $value = $child->appendChild($value);
+     $node_child = addTextNode($doc,$container,$column,$row[$i]);
+
+      
      
  }
  
@@ -160,32 +169,26 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
  	// order attribute increments.
  	// TODO: sort alphabetically?
  	
-	 $child = $doc->createElement("order");
-	 $child = $container->appendChild($child);
-	 $value = $doc->createTextNode($order);
-	 $value = $child->appendChild($value); 
+	 $node_order = addTextNode($doc,$container,"order",$order);
 	 
 	 // add level attribute. All are level 2. CMSes are level 1. 
 	 // TODO: children.
 	 
-	 $child = $doc->createElement("level");
-	 $child = $container->appendChild($child);
-	 $value = $doc->createTextNode("2");
-	 $value = $child->appendChild($value); 
+	 $node_level = addTextNode($doc,$container,"level","2");
 	 
 	 // add id attribute.
 		 
 	 if ($title) {
-	 	$id=preg_replace("/[^a-zA-Z]*/","",$title);
+	 	$id=preg_replace("/[^a-zA-Z]*/","",$title . $cms);
 	 } else {
 	 	
+	 	$node_text = addTextNode($doc,$container,"text",$url);
 	 	$id=dechex(rand());
 	 }
-	 $child = $doc->createAttribute("id");
-	 $child = $container->appendChild($child);
-	 $value = $doc->createTextNode($id);
-	 $value = $child->appendChild($value); 
-	 
+
+	 $node_id = addAttribute($doc,$container,"id",$id);
+
+
 	 // add parent.
 	 
 	 if ($cms) {
@@ -195,11 +198,7 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
 		 }
 		 
 	 if ($parent != "") {
-	 	
-		 $child = $doc->createElement("parent");
-		 $child = $container->appendChild($child);
-		 $value = $doc->createTextNode($parent);
-		 $value = $child->appendChild($value); 
+	 	$node_parent = addTextNode($doc,$container,"parent",$parent);
 	 }
 	 
 	 $cells->appendChild($container);
@@ -216,33 +215,18 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
 	 $cell = $cells->appendChild($cell);
 	 
 	 $order+=100;
- 	 
- 	 
-	 $child = $doc->createElement("order");
-	 $child = $cell->appendChild($child);
-	 $value = $doc->createTextNode($order);
-	 $value = $child->appendChild($value); 
- 	      	
-	 $child = $doc->createElement("text");
-	 $child = $cell->appendChild($child);
-	 $value = $doc->createTextNode($system);
-	 $value = $child->appendChild($value); 
+ 	 $node_order = addTextNode($doc,$cell,"order",$order);
+
+	 $node_text = addTextNode($doc,$cell,"text",$system);
 	 
 	 $id=preg_replace("/[^a-zA-Z]*/","",$system);
 	 
-	 $child = $doc->createAttribute("id");
-	 $child = $cell->appendChild($child);
-	 $value = $doc->createTextNode($id);
-	 $value = $child->appendChild($value); 
-	 
+	 $node_id = addAttribute($doc,$cell,"id",$id);
+
 	 
 	 // add level attribute. All are level 2. CMSes are level 1. 
 	
-	 $child = $doc->createElement("level");
-	 $child = $cell->appendChild($child);
-	 $value = $doc->createTextNode("1");
-	 $value = $child->appendChild($value); 
-	 
+	 $node_level = addTextNode($doc,$cell,"level","1");
  	
  }
  
@@ -250,6 +234,25 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
  
  
 file_put_contents($outputFilename,$doc->saveXML());
+
+
+
+
+function addTextNode($doc,$parent,$name,$value) {
+	$child = $doc->createElement($name);
+	$child = $parent->appendChild($child);
+	$value = $doc->createTextNode($value);
+	$value = $child->appendChild($value); 
+	return $child;	
+}
+function addAttribute($doc,$parent,$name,$value) {
+	$child = $doc->createAttribute($name);
+	$child = $parent->appendChild($child);
+	$value = $doc->createTextNode($value);
+	$value = $child->appendChild($value); 
+	return $child;	
+}
+
 
 
 ?>
