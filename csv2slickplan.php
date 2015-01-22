@@ -293,7 +293,7 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
 
 if ($mode_systems) {
 		
-	sort($systems,SORT_STRING);
+	natcasesort($systems);
 	
 	// We need first-level heirarchy for the systems view...
 	
