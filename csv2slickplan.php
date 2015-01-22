@@ -122,7 +122,7 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
  
  foreach ($headers as $i => $column)
  {
- 	$column=strtolower(trim($column));
+ 	$column=strtolower(trim(preg_replace("/ /","-",$column)));
  	$row[$i]=trim($row[$i]);
  	
 	if ($column=="" || $row[$i]=="") {
