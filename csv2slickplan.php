@@ -25,6 +25,9 @@ if (strtolower($argv[3])=="ia") {
 // Open csv to read
 
 $inputFile  = fopen($inputFilename, 'rt');
+if (!$inputFile) {
+	 exit("Couldn't open $inputFilename \n");}
+	 
 
 // Get the headers of the CSV's columns
 
@@ -323,7 +326,10 @@ if ($mode_systems) {
 
  
  
-file_put_contents($outputFilename,$doc->saveXML());
+$result = file_put_contents($outputFilename,$doc->saveXML()) ;
+if (!$result) {
+	exit("Couldn't write to $outputFilename \n");}
+	
 
 
 
