@@ -103,6 +103,8 @@ $order = 100;
 
 $systems=[];
 
+$levels=[];
+
 
 // Loop through each row creating a <row> node with the correct data
 
@@ -322,7 +324,17 @@ if ($mode_systems) {
 	 	
 	 }
 	 
+} else {
+	
+	// Clean up nesting.
+	
+	setNesting($doc,$cells);
+	setNesting($doc,$cells);
+	setNesting($doc,$cells);
+
 }
+
+
 
  
  
@@ -335,6 +347,54 @@ if (!$result) {
 
 
 
+function setNesting($doc,$cells) {
+
+     	$results=$cells->getElementsByTagName("cell");
+		foreach($results as $result) {
+			$this_id=$result->getAttribute("id"); 
+     		$levels[$this_id] = $result->getElementsByTagName("level")->item(0)->nodeValue;	
+     	}
+			
+		foreach($levels as $id => $level) {
+			$parent="";
+     		foreach($results as $result) {
+     			$result_id=$result->getAttribute("id"); 
+     			if ($result_id==$id) {
+	     			try {
+	     				$parents=$result->getElementsByTagName("parent");
+	     				if ($parents->length>0) {
+	     					$parent=$result->getElementsByTagName("parent")->item(0)->nodeValue;
+	     				}
+	     				
+		     		} catch (Exception $e) {
+		     		} 
+	     		}
+     		}
+     		
+     		if ($parent != "" && $parent != $id) {
+     			if (array_key_exists($parent,$levels)==false) {
+     				trigger_error("The parent site $parent doesn't exist. $id will not appear in the output.\n",E_USER_WARNING);
+     				continue;
+     			}
+     			
+     			$parent_level=$levels[$parent];
+     			
+     			if ($parent_level==$level) {
+     				$levels[$id]=$levels[$id]+1;
+     				$search=$cells->getElementsByTagName("cell");
+	     			foreach($search as $candidate) {
+	     				$candidate_id=$candidate->getAttribute("id"); 
+						if ($candidate_id==$id) {
+							$candidate->getElementsByTagName("level")->item(0)->nodeValue = $levels[$id];	
+						}
+	     			}
+     			}
+     		}
+     		
+		}	
+}
+
+	
 
 
 function addTextNode($doc,$parent,$name,$value) {
