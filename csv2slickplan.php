@@ -158,7 +158,7 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
  	
  	 // many incoming URLs are missing the protocol, add it if needed
  	 
-     if ($column=="url" && strpos($row[$i],"http")==false) {
+     if ($column=="url" && strpos($row[$i],"http")===false) {
      	$row[$i]="http://" . $row[$i];
      	
      }
@@ -331,7 +331,8 @@ if ($mode_systems) {
 	setNesting($doc,$cells);
 	setNesting($doc,$cells);
 	setNesting($doc,$cells);
-
+	sortSitesByName($doc,$cells);
+	
 }
 
 
@@ -344,6 +345,34 @@ if (!$result) {
 	
 
 
+
+function sortSitesByName($doc,$cells) {
+
+
+   	$results=$cells->getElementsByTagName("cell");
+	foreach($results as $result) {
+		$this_id=$result->getAttribute("id"); 
+   		$levels[$this_id] = $result->getElementsByTagName("level")->item(0)->nodeValue;	
+   	}
+		
+	ksort($levels);
+	$order=100;
+	
+	foreach($levels as $id => $level) {
+		foreach($results as $result) {
+   			$result_id=$result->getAttribute("id"); 
+   			if ($result_id==$id) {
+    			try {
+    				$result->getElementsByTagName("order")->item(0)->nodeValue=$order;
+    				$order+=100;
+    			} catch (Exception $e) {
+    			}
+    			
+   			}
+		}
+	}
+	
+}
 
 
 
@@ -373,7 +402,8 @@ function setNesting($doc,$cells) {
      		
      		if ($parent != "" && $parent != $id) {
      			if (array_key_exists($parent,$levels)==false) {
-     				trigger_error("The parent site $parent doesn't exist. $id will not appear in the output.\n",E_USER_WARNING);
+     				trigger_error("The parent site $parent doesn't exist. $id will not appear in the output.
+     				\n",E_USER_WARNING);
      				continue;
      			}
      			
@@ -390,7 +420,6 @@ function setNesting($doc,$cells) {
 	     			}
      			}
      		}
-     		
 		}	
 }
 
