@@ -95,8 +95,11 @@ $cells=$section->appendChild($cells);
 
 $column_translations["url"]="url";
 $column_translations["title"]="text";
-// $column_translations["cms-instance"]="desc";
 $column_translations["auto-color"]="color";
+$column_translations["cms-instance"]="cms";
+$column_translations["page-count"]="pages";
+$column_translations["average-annual-page-views-per-page"]="pageviews";
+$column_translations["average-annual-pageviews-per-page"]="pageviews";
 
 
 $order = 100;
@@ -123,14 +126,18 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
  $parentid="";
  $url="";
  $iaparent="";
- 
+ $pageviews="";
+ $pages="";
+ $value="";
+ $notes="";
+ $description="";
  
  foreach ($headers as $i => $column)
  {
  	$column=strtolower(trim(preg_replace("/ /","-",$column)));
  	$row[$i]=trim($row[$i]);
  	
-	if ($column=="" || $row[$i]=="") {
+	if ($column=="" || $row[$i]=="" || $row[$i]=="#N/A") {
 		continue;
 	}
 	
@@ -142,8 +149,8 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
  	
  	// If it's the CMS, save it to description and $cms. 
  	
- 	if ($column=="cms-instance") {
- 		$column="desc";
+ 	if ($column=="cms") {
+ 		
  		$cms=$row[$i];
  		
  		// Is it in our list of CMSes?
@@ -179,6 +186,20 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
      	$iaparent=$row[$i];
      }
      
+     if ($column=="pageviews") {
+     	$pageviews=$row[$i];
+     }
+     if ($column=="pages") {
+     	$pages=$row[$i];
+     }
+     if ($column=="value") {
+     	$value=$row[$i];
+     }
+     if ($column=="notes") {
+     	$notes=$row[$i];
+     }
+     
+     
      $node_child = addTextNode($doc,$container,$column,$row[$i]);
 
  }
@@ -189,6 +210,27 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
  }
   
  if ($saveit) {
+ 	
+ 	if ($cms!="") {
+ 		$description .= "CMS: " . $cms . ". \n";
+ 	}
+ 	if ($iaparent!="") {
+ 		$description .= "Category: " . $iaparent . ". \n";
+ 	}
+ 	if ($pages!="") {
+ 		$description .= "Approximate page count: &#8776;" . intval($pages) . ". \n";
+ 	}
+ 	if ($pageviews!="") {
+ 		$description .= "Annual PVs/page: &#8776;" . sprintf("%.2f",$pageviews) . ". \n";
+ 	}
+ 	if ($value!="") {
+ 		$description .= "Value: " . $value . ". \n";
+ 	}
+ 	if ($notes!="") {
+ 		$description .= "Other notes: " . $notes . ". \n";
+ 	}
+ 	 $node_order = addTextNode($doc,$container,"desc",$description);
+	 
  	// order attribute increments.
  	// TODO: sort alphabetically?
  	
