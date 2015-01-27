@@ -98,8 +98,11 @@ $column_translations["title"]="text";
 $column_translations["auto-color"]="color";
 $column_translations["cms-instance"]="cms";
 $column_translations["page-count"]="pages";
-$column_translations["average-annual-page-views-per-page"]="pageviews";
+
+// Outdated variable name, but why break everything?
+$column_translations["average-annual-page-views-per-page"]="pageviews"; 
 $column_translations["average-annual-pageviews-per-page"]="pageviews";
+$column_translations["average-annual-uniques-per-page"]="pageviews";
 
 
 $order = 100;
@@ -221,7 +224,7 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
  		$description .= "Approximate page count: &#8776;" . intval($pages) . ". \n";
  	}
  	if ($pageviews!="") {
- 		$description .= "Annual PVs/page: &#8776;" . sprintf("%.2f",$pageviews) . ". \n";
+ 		$description .= "Annual uniques/page: &#8776;" . sprintf("%.2f",$pageviews) . ". \n";
  	}
  	if ($value!="") {
  		$description .= "Value: " . $value . ". \n";
