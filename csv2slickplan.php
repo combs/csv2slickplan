@@ -103,6 +103,7 @@ $column_translations["page-count"]="pages";
 $column_translations["average-annual-page-views-per-page"]="pageviews"; 
 $column_translations["average-annual-pageviews-per-page"]="pageviews";
 $column_translations["average-annual-uniques-per-page"]="pageviews";
+$column_translations["annual-uniques"]="sumpageviews";
 
 
 $order = 100;
@@ -134,6 +135,7 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
  $value="";
  $notes="";
  $description="";
+ $sumpageviews="";
  
  foreach ($headers as $i => $column)
  {
@@ -154,7 +156,7 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
  	
  	if ($column=="cms") {
  		
- 		$cms=$row[$i];
+ 		$cms=preg_replace("/^[z]*/","",$row[$i]);
  		
  		// Is it in our list of CMSes?
  		
@@ -201,7 +203,9 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
      if ($column=="notes") {
      	$notes=$row[$i];
      }
-     
+     if ($column=="sumpageviews") {
+     	$sumpageviews=$row[$i];
+     }
      
      $node_child = addTextNode($doc,$container,$column,$row[$i]);
 
@@ -220,6 +224,9 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
  	if ($iaparent!="") {
  		$description .= "Category: " . $iaparent . ". \n";
  	}
+ 	if ($sumpageviews!="") {
+ 		$description .= "Annual uniques: " . intval($sumpageviews) . ". \n";
+ 	}
  	if ($pages!="") {
  		$description .= "Approximate page count: &#8776;" . intval($pages) . ". \n";
  	}
@@ -230,7 +237,7 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
  		$description .= "Value: " . $value . ". \n";
  	}
  	if ($notes!="") {
- 		$description .= "Other notes: " . $notes . ". \n";
+ 		$description .= "Other notes: " . $notes . " \n";
  	}
  	 $node_order = addTextNode($doc,$container,"desc",$description);
 	 
