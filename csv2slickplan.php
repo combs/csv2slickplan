@@ -36,8 +36,8 @@ $headers = fgetcsv($inputFile);
 
 // Create DOM document
 
-$doc  = new DOMDocument();
-$doc->formatOutput   = true;
+$doc = new DOMDocument();
+$doc->formatOutput = true;
 
 // Add root sitemap node to the document
 
