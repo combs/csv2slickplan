@@ -105,6 +105,7 @@ $column_translations["average-annual-pageviews-per-page"]="pageviews";
 $column_translations["average-annual-uniques-per-page"]="pageviews";
 $column_translations["annual-uniques"]="sumpageviews";
 
+$column_translations["average-time-on-page"]="time";
 
 $order = 100;
 
@@ -123,7 +124,8 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
  
  $saveit=false;
  
- // Convenience variables--we'll gather these as we go.
+ // Convenience variables--we'll gather these as we go. 
+ // Should've done this as a keyed array.
  
  $title="";
  $cms="";
@@ -136,13 +138,15 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
  $notes="";
  $description="";
  $sumpageviews="";
+ $time="";
+  
  
  foreach ($headers as $i => $column)
  {
  	$column=strtolower(trim(preg_replace("/ /","-",$column)));
  	$row[$i]=trim($row[$i]);
  	
-	if ($column=="" || $row[$i]=="" || $row[$i]=="#N/A") {
+	if ($column=="" || $row[$i]=="" || $row[$i]=="#N/A" || $row[$i]=="#DIV/0!") {
 		continue;
 	}
 	
@@ -203,8 +207,12 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
      if ($column=="notes") {
      	$notes=$row[$i];
      }
-     if ($column=="sumpageviews") {
+     if ($column=="sumpageviews" && $row[$i]>0) {
      	$sumpageviews=$row[$i];
+     }
+     
+     if ($column=="time") {
+     	$time=$row[$i];
      }
      
      $node_child = addTextNode($doc,$container,$column,$row[$i]);
@@ -228,10 +236,13 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
  		$description .= "Annual uniques: " . intval($sumpageviews) . ". \n";
  	}
  	if ($pages!="") {
- 		$description .= "Approximate page count: &#8776;" . intval($pages) . ". \n";
+ 		$description .= "Estimated page count: &#8776;" . intval($pages) . ". \n";
  	}
  	if ($pageviews!="") {
- 		$description .= "Annual uniques/page: &#8776;" . sprintf("%.2f",$pageviews) . ". \n";
+ 		$description .= "Estimated uniques/page: &#8776;" . sprintf("%.2f",$pageviews) . ". \n";
+ 	}
+ 	if ($time!="") {
+ 		$description .= "Average time on page: " . $time . ". \n";
  	}
  	if ($value!="") {
  		$description .= "Value: " . $value . ". \n";
