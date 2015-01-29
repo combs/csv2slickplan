@@ -104,7 +104,6 @@ $column_translations["average-annual-page-views-per-page"]="pageviews";
 $column_translations["average-annual-pageviews-per-page"]="pageviews";
 $column_translations["average-annual-uniques-per-page"]="pageviews";
 $column_translations["annual-uniques"]="sumpageviews";
-
 $column_translations["average-time-on-page"]="time";
 
 $order = 100;
@@ -275,19 +274,19 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
 		 
 	 if ($title) {
 
-		//	 	$id=preg_replace("/[^a-zA-Z]*/","",$title . $cms);
+		//	 	$id=preg_replace("/[^a-zA-Z0-9]*/","",$title . $cms);
 		// Adding the CMS into the key is helpful for system heirarchy, but not
 		// for the IA-centric heirarchy.
 	
 		// SlickPlan assigns an alpha rando gibberish. Let's just use the 
 		//  title's alpha chars for the ID.
 		
-		$id=preg_replace("/[^a-zA-Z]*/","",$title);
+		$id=preg_replace("/[^a-zA-Z0-9]*/","",$title);
 		 	
 	} else {
 	 	
 	 	$node_text = addTextNode($doc,$container,"text",$url);
-	 	$id=preg_replace("/[^a-zA-Z]*/","",$url);
+	 	$id=preg_replace("/[^a-zA-Z0-9]*/","",$url);
 	}
 	
 	$node_id = addAttribute($doc,$container,"id",$id);
@@ -324,7 +323,7 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
 	 			
 	 			// set its parent 
 	 			
-	 			$parent=preg_replace("/[^a-zA-Z]*/","",$iaparent);
+	 			$parent=preg_replace("/[^a-zA-Z0-9]*/","",$iaparent);
 	 			$node_level->nodeValue="2";
 	 		}
 	 		
@@ -341,7 +340,7 @@ while (($row = fgetcsv($inputFile)) !== FALSE)
 	 	// Systems heirarchy
 		 	
 		 if ($cms) {
-			 	$parent=preg_replace("/[^a-zA-Z]*/","",$cms);
+			 	$parent=preg_replace("/[^a-zA-Z0-9]*/","",$cms);
 			 }  
 		 
 	 }
@@ -376,7 +375,7 @@ if ($mode_systems) {
 	
 		 $node_text = addTextNode($doc,$cell,"text",$system);
 		 
-		 $id=preg_replace("/[^a-zA-Z]*/","",$system);
+		 $id=preg_replace("/[^a-zA-Z0-9]*/","",$system);
 		 
 		 $node_id = addAttribute($doc,$cell,"id",$id);
 		
